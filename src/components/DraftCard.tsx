@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { Activity, Draft, DraftState } from "../types/teo";
 import LettersPreview from "./LettersPreview";
+import PublishControl from "./PublishControl";
 
 interface DraftCardProps {
   draft: Draft;
@@ -10,6 +11,7 @@ interface DraftCardProps {
   onPreview: () => void;
   onApprove: () => void;
   onRemove: () => void;
+  onPublishChange?: (published: boolean) => void;
 }
 
 const STATE_LABEL: Record<DraftState, string> = {
@@ -26,6 +28,7 @@ export default function DraftCard({
   onPreview,
   onApprove,
   onRemove,
+  onPublishChange,
 }: DraftCardProps) {
   const [open, setOpen] = useState<boolean>(false);
 
@@ -39,7 +42,7 @@ export default function DraftCard({
       <header className="draft-card-header">
         <div>
           <h3>{draft.title}</h3>
-          <p>{draft.subject} · {draft.subTitle}</p>
+          <p>{draft.subject} · {draft.copied ? "Do catálogo" : draft.subTitle}</p>
         </div>
         <span className={`chip chip-${state}`}>{STATE_LABEL[state]}</span>
       </header>
@@ -68,6 +71,9 @@ export default function DraftCard({
       {state === "approved" && (
         <div className="draft-card-actions">
           <p className="success">Já aparece no app da criança, em {draft.subject}.</p>
+          {onPublishChange && !draft.copied && (
+            <PublishControl published={Boolean(draft.published)} busy={busy} onChange={onPublishChange} />
+          )}
           <button type="button" className="button-ghost" disabled={busy} onClick={onRemove}>
             Remover da conta
           </button>

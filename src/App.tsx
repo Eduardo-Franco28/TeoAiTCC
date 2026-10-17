@@ -1,18 +1,27 @@
 import { useState } from "react";
 import teoAvatar from "./assets/teo.png";
 import StatusPanel from "./components/StatusPanel";
+import useCatalog from "./hooks/useCatalog";
 import useChat from "./hooks/useChat";
 import useDrafts from "./hooks/useDrafts";
 import useSession from "./hooks/useSession";
 import ActivitiesScreen from "./screens/ActivitiesScreen";
+import CatalogScreen from "./screens/CatalogScreen";
 import ChatScreen from "./screens/ChatScreen";
 
-type Tab = "chat" | "activities";
+type Tab = "chat" | "activities" | "catalog";
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: "chat", label: "Conversa" },
+  { id: "activities", label: "Atividades" },
+  { id: "catalog", label: "Catálogo" },
+];
 
 export default function App() {
   const { session, status, expire } = useSession();
   const chat = useChat(session, expire);
   const drafts = useDrafts(session, expire);
+  const catalog = useCatalog(session, expire);
   const [tab, setTab] = useState<Tab>("chat");
 
   if (status === "loading") {
@@ -56,27 +65,24 @@ export default function App() {
       </header>
 
       <nav className="tabs" aria-label="Seções do Teo">
-        <button
-          type="button"
-          className={tab === "chat" ? "tab tab-active" : "tab"}
-          onClick={() => setTab("chat")}
-        >
-          Conversa
-        </button>
-        <button
-          type="button"
-          className={tab === "activities" ? "tab tab-active" : "tab"}
-          onClick={() => setTab("activities")}
-        >
-          Atividades
-        </button>
+        {TABS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={tab === item.id ? "tab tab-active" : "tab"}
+            aria-current={tab === item.id ? "page" : undefined}
+            onClick={() => setTab(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
       </nav>
 
-      {tab === "chat" ? (
-        <ChatScreen chat={chat} drafts={drafts} nome={session.nome} />
-      ) : (
-        <ActivitiesScreen drafts={drafts} />
-      )}
+      {tab === "chat" && <ChatScreen chat={chat} drafts={drafts} nome={session.nome} />}
+
+      {tab === "activities" && <ActivitiesScreen drafts={drafts} />}
+
+      {tab === "catalog" && <CatalogScreen catalog={catalog} onAdded={drafts.refresh} />}
     </div>
   );
 }

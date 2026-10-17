@@ -18,7 +18,10 @@ export default function ActivitiesScreen({ drafts }: ActivitiesScreenProps) {
     <section className="activities">
       <div className="activities-intro">
         <h2>Atividades da conta</h2>
-        <p>As que você criou com o Teo. Só as aprovadas aparecem no app da criança.</p>
+        <p>
+          As que você criou com o Teo ou adicionou do catálogo. Só as aprovadas aparecem no app da
+          criança.
+        </p>
       </div>
 
       {drafts.error && <p className="error">{drafts.error}</p>}
@@ -57,6 +60,7 @@ export default function ActivitiesScreen({ drafts }: ActivitiesScreenProps) {
           onPreview={() => drafts.loadPreview(draft.id)}
           onApprove={() => drafts.approve(draft.id)}
           onRemove={() => drafts.remove(draft.id)}
+          onPublishChange={(published) => drafts.setPublished(draft.id, published)}
         />
       ))}
     </section>

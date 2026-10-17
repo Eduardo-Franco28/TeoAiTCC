@@ -18,6 +18,19 @@ export interface Draft {
   subTitle: string;
   subject: string;
   draft: boolean;
+  published?: boolean;
+  copied?: boolean;
+}
+
+export interface CatalogItem {
+  id: number;
+  title: string;
+  subTitle: string;
+  subject: string;
+  author: string;
+  copies: number;
+  mine: boolean;
+  added: boolean;
 }
 
 export type DraftState = "draft" | "approved" | "removed";

@@ -4,7 +4,9 @@ import {
   approveDraft,
   getDraftActivity,
   listDrafts,
+  publishDraft,
   removeDraft,
+  unpublishDraft,
 } from "../services/draftService";
 import type { Activity, Draft, DraftState, TeoSession } from "../types/teo";
 
@@ -98,6 +100,29 @@ export default function useDrafts(session: TeoSession | null, onExpired: () => v
     }
   };
 
+  const setPublished = async (id: number, published: boolean) => {
+    if (!session) return;
+
+    setBusyId(id);
+    setError(null);
+
+    try {
+      if (published) await publishDraft(session.token, id);
+      else await unpublishDraft(session.token, id);
+
+      setDrafts((current) =>
+        current.map((draft) => (draft.id === id ? { ...draft, published } : draft)),
+      );
+    } catch (err) {
+      handleError(
+        err,
+        published ? "Não foi possível publicar no catálogo" : "Não foi possível tirar do catálogo",
+      );
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const stateOf = (draft: Draft): DraftState =>
     states[draft.id] ?? (draft.draft ? "draft" : "approved");
 
@@ -111,6 +136,7 @@ export default function useDrafts(session: TeoSession | null, onExpired: () => v
     loadPreview,
     approve,
     remove,
+    setPublished,
     stateOf,
   };
 }
