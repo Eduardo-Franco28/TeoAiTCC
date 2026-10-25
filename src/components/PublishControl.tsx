@@ -13,7 +13,7 @@ export default function PublishControl({ published, busy, onChange }: PublishCon
     return (
       <div className="publish">
         <p className="publish-status">📚 Publicada no catálogo</p>
-        <button type="button" className="button-ghost" disabled={busy} onClick={() => onChange(false)}>
+        <button type="button" className="button-ghost button-small" disabled={busy} onClick={() => onChange(false)}>
           Tirar do catálogo
         </button>
       </div>
@@ -22,15 +22,15 @@ export default function PublishControl({ published, busy, onChange }: PublishCon
 
   if (confirming) {
     return (
-      <div className="publish publish-confirm">
+      <div className="confirm">
         <p>
           Outras famílias e profissionais vão poder ver e copiar essa atividade. Confira se ela não
           tem o nome da criança ou outro dado pessoal.
         </p>
-        <div className="draft-card-actions">
+        <div className="card-actions">
           <button
             type="button"
-            className="button-primary"
+            className="button-primary button-small"
             disabled={busy}
             onClick={() => {
               onChange(true);
@@ -39,7 +39,12 @@ export default function PublishControl({ published, busy, onChange }: PublishCon
           >
             {busy ? "Aguarde..." : "Publicar"}
           </button>
-          <button type="button" className="button-ghost" disabled={busy} onClick={() => setConfirming(false)}>
+          <button
+            type="button"
+            className="button-ghost button-small"
+            disabled={busy}
+            onClick={() => setConfirming(false)}
+          >
             Cancelar
           </button>
         </div>
@@ -48,7 +53,7 @@ export default function PublishControl({ published, busy, onChange }: PublishCon
   }
 
   return (
-    <button type="button" className="button-ghost" disabled={busy} onClick={() => setConfirming(true)}>
+    <button type="button" className="button-ghost button-small" disabled={busy} onClick={() => setConfirming(true)}>
       Publicar no catálogo
     </button>
   );

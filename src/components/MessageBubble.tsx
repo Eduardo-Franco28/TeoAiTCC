@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import teoAvatar from "../assets/teo.png";
+import { MASCOT } from "../mascot";
 import type { ChatMessage } from "../types/teo";
 import formatText from "../utils/formatText";
 
@@ -19,7 +19,7 @@ export default function MessageBubble({ message, children }: MessageBubbleProps)
 
   return (
     <div className="message message-teo">
-      <img className="message-avatar" src={teoAvatar} alt="" />
+      <img className="avatar message-avatar" src={MASCOT.feliz} alt="" />
       <div className="message-body">
         <div className="bubble bubble-teo">
           {formatText(message.content)}

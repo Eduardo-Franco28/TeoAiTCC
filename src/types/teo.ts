@@ -12,6 +12,13 @@ export interface AuthResponse {
   };
 }
 
+export type ActivityType =
+  | "DRAG_LETTERS"
+  | "DRAG_DOTS"
+  | "DRAG_SLOTS_TO_GROUP"
+  | "DRAG_TO_SLOTS"
+  | "DRAG_SUBTRACTION";
+
 export interface Draft {
   id: number;
   title: string;
@@ -20,6 +27,7 @@ export interface Draft {
   draft: boolean;
   published?: boolean;
   copied?: boolean;
+  type?: ActivityType | null;
 }
 
 export interface CatalogItem {
@@ -31,6 +39,7 @@ export interface CatalogItem {
   copies: number;
   mine: boolean;
   added: boolean;
+  type?: ActivityType | null;
 }
 
 export type DraftState = "draft" | "approved" | "removed";
@@ -60,7 +69,15 @@ export interface ChatMessage {
   content: string;
   drafts: Draft[];
   sources: Source[];
+  streaming?: boolean;
 }
+
+export type ChatEvent =
+  | { type: "status"; text: string }
+  | { type: "delta"; text: string }
+  | { type: "reset" }
+  | { type: "error"; text: string }
+  | ({ type: "done" } & ChatResponse);
 
 export interface QuestionSlot {
   name: string;
@@ -92,3 +109,55 @@ export interface Activity {
   resumeQuestionId: number | null;
   lstQuestions: Question[];
 }
+
+export interface ConversationSummary {
+  id: string;
+  title: string;
+  updatedAt: string;
+}
+
+export interface LettersRequest {
+  theme?: string;
+  words?: string[];
+  count?: number;
+  hidden: number | null;
+}
+
+export interface LettersResponse {
+  draft: Draft;
+}
+
+export interface Subject {
+  id: number;
+  name: string;
+}
+
+export interface SumActivityRequest {
+  count: number;
+  maxTotal: number;
+}
+
+export interface GroupItem {
+  name: string;
+  emoji: string;
+}
+
+export interface GroupPlan {
+  name: string;
+  items: GroupItem[];
+}
+
+export interface GroupsActivityRequest {
+  theme: string;
+  subjectId: number;
+  groups: number;
+  items: number;
+}
+
+export interface GroupsResponse {
+  draft: Draft;
+  question: string;
+  groups: GroupPlan[];
+}
+
+export type Screen = "chat" | "create" | "mine" | "catalog";

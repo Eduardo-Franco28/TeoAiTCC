@@ -30,8 +30,8 @@ export async function request<T>(
 
   if (!response.ok) {
     const data = await response.json().catch(() => null);
-    const message =
-      data?.detail ?? data?.message ?? "Não foi possível falar com o servidor";
+    const detail = typeof data?.detail === "string" ? data.detail : null;
+    const message = detail ?? data?.message ?? "Não foi possível falar com o servidor";
     throw new ApiError(response.status, message);
   }
 

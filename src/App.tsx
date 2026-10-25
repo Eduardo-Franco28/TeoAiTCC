@@ -1,88 +1,147 @@
-import { useState } from "react";
-import teoAvatar from "./assets/teo.png";
+import { useCallback, useEffect, useState } from "react";
+import Icon from "./components/Icon";
+import Sidebar from "./components/Sidebar";
+import Splash from "./components/Splash";
 import StatusPanel from "./components/StatusPanel";
+import Toast from "./components/Toast";
 import useCatalog from "./hooks/useCatalog";
 import useChat from "./hooks/useChat";
+import useConversations from "./hooks/useConversations";
+import useCreator from "./hooks/useCreator";
 import useDrafts from "./hooks/useDrafts";
+import useMediaQuery from "./hooks/useMediaQuery";
 import useSession from "./hooks/useSession";
+import { MASCOT } from "./mascot";
 import ActivitiesScreen from "./screens/ActivitiesScreen";
 import CatalogScreen from "./screens/CatalogScreen";
 import ChatScreen from "./screens/ChatScreen";
+import CreateScreen from "./screens/CreateScreen";
+import type { Screen } from "./types/teo";
 
-type Tab = "chat" | "activities" | "catalog";
+const SPLASH_MS = 2500;
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "chat", label: "Conversa" },
-  { id: "activities", label: "Atividades" },
-  { id: "catalog", label: "Catálogo" },
-];
+const TOAST_MS = 2600;
 
 export default function App() {
   const { session, status, expire } = useSession();
   const chat = useChat(session, expire);
   const drafts = useDrafts(session, expire);
   const catalog = useCatalog(session, expire);
-  const [tab, setTab] = useState<Tab>("chat");
+  const conversations = useConversations(session, expire);
+  const creator = useCreator(session, expire);
+  const mobile = useMediaQuery("(max-width: 767px)");
+  const [screen, setScreen] = useState<Screen>("chat");
+  const [expanded, setExpanded] = useState<boolean>(true);
+  const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const [splash, setSplash] = useState<boolean>(true);
+  const [toast, setToast] = useState<string | null>(null);
 
-  if (status === "loading") {
-    return <StatusPanel title="Abrindo o Teo..." message="Só um instante." />;
-  }
+  useEffect(() => {
+    const timer = setTimeout(() => setSplash(false), SPLASH_MS);
+    return () => clearTimeout(timer);
+  }, []);
 
-  if (status === "missing") {
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), TOAST_MS);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  useEffect(() => {
+    if (!chat.loading) conversations.refresh();
+  }, [chat.conversationId, chat.loading, conversations.refresh]);
+
+  const navigate = useCallback((next: Screen) => {
+    setScreen(next);
+    setMenuOpen(false);
+  }, []);
+
+  const openConversation = (id: string) => {
+    chat.open(id);
+    navigate("chat");
+  };
+
+  const newConversation = () => {
+    chat.restart();
+    navigate("chat");
+  };
+
+  const added = () => {
+    drafts.refresh();
+    setToast("Atividade adicionada ao app da criança");
+  };
+
+  if (status === "loading" || status === "missing" || status === "expired" || !session) {
     return (
-      <StatusPanel
-        title="Abra o Teo pelo app"
-        message="No IntegraMente, vá em Perfil, toque em Teo e digite o PIN."
-      />
+      <>
+        {status === "loading" && !splash && (
+          <StatusPanel title="Abrindo o Teo..." message="Só um instante." pose="voando" />
+        )}
+        {status === "missing" && (
+          <StatusPanel
+            title="Abra o Teo pelo app"
+            message="No IntegraMente, vá em Perfil, toque em Teo e digite o PIN."
+          />
+        )}
+        {(status === "expired" || (status === "ready" && !session)) && (
+          <StatusPanel
+            title="Sua sessão acabou"
+            message="Por segurança, o acesso ao Teo vence. Volte ao app IntegraMente, toque em Teo e digite o PIN de novo."
+            pose="bracos"
+          />
+        )}
+        {splash && <Splash />}
+      </>
     );
   }
 
-  if (status === "expired" || !session) {
-    return (
-      <StatusPanel
-        title="Sua sessão acabou"
-        message="Por segurança, o acesso ao Teo vence. Volte ao app IntegraMente, toque em Teo e digite o PIN de novo."
-      />
-    );
-  }
+  const hero = screen === "chat" && chat.messages.length === 0 && !chat.loading;
 
   return (
     <div className="app">
-      <header className="topbar">
-        <div className="topbar-brand">
-          <img src={teoAvatar} alt="" />
-          <div>
+      <Sidebar
+        expanded={mobile || expanded}
+        mobile={mobile}
+        mobileOpen={mobile && menuOpen}
+        screen={screen}
+        userName={session.nome}
+        conversations={conversations.items}
+        activeConversationId={chat.conversationId}
+        onToggleExpand={() => setExpanded(!expanded)}
+        onCloseMobile={() => setMenuOpen(false)}
+        onNavigate={navigate}
+        onOpenConversation={openConversation}
+        onNewConversation={newConversation}
+      />
+
+      <main className={hero ? "main main-hero" : "main"}>
+        <div className="main-glow" aria-hidden="true" />
+
+        {mobile && (
+          <header className="mobile-bar">
+            <button type="button" className="icon-button" onClick={() => setMenuOpen(true)} aria-label="Abrir menu">
+              <Icon name="menu" />
+            </button>
+            <img className="avatar" src={MASCOT.feliz} alt="" />
             <strong>Teo</strong>
-            <span>Assistente do IntegraMente</span>
-          </div>
-        </div>
-
-        {tab === "chat" && chat.messages.length > 0 && (
-          <button type="button" className="button-ghost button-small" onClick={chat.restart}>
-            Nova conversa
-          </button>
+          </header>
         )}
-      </header>
 
-      <nav className="tabs" aria-label="Seções do Teo">
-        {TABS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={tab === item.id ? "tab tab-active" : "tab"}
-            aria-current={tab === item.id ? "page" : undefined}
-            onClick={() => setTab(item.id)}
-          >
-            {item.label}
-          </button>
-        ))}
-      </nav>
+        {screen === "chat" && <ChatScreen chat={chat} drafts={drafts} onCreate={() => navigate("create")} />}
 
-      {tab === "chat" && <ChatScreen chat={chat} drafts={drafts} nome={session.nome} />}
+        {screen === "create" && (
+          <CreateScreen creator={creator} drafts={drafts} onGoMine={() => navigate("mine")} onToast={setToast} />
+        )}
 
-      {tab === "activities" && <ActivitiesScreen drafts={drafts} />}
+        {screen === "mine" && (
+          <ActivitiesScreen drafts={drafts} onCreate={() => navigate("create")} onCatalog={() => navigate("catalog")} />
+        )}
 
-      {tab === "catalog" && <CatalogScreen catalog={catalog} onAdded={drafts.refresh} />}
+        {screen === "catalog" && <CatalogScreen catalog={catalog} onAdded={added} />}
+      </main>
+
+      <Toast text={toast} />
+      {splash && <Splash />}
     </div>
   );
 }

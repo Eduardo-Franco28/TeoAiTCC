@@ -1,89 +1,148 @@
 import { useEffect, useRef } from "react";
 import Composer from "../components/Composer";
 import DraftCard from "../components/DraftCard";
+import Icon from "../components/Icon";
+import type { IconName } from "../components/Icon";
 import MessageBubble from "../components/MessageBubble";
 import type useChat from "../hooks/useChat";
 import type useDrafts from "../hooks/useDrafts";
+import { MASCOT } from "../mascot";
 
 interface ChatScreenProps {
   chat: ReturnType<typeof useChat>;
   drafts: ReturnType<typeof useDrafts>;
-  nome: string;
+  onCreate: () => void;
 }
 
-const SUGGESTIONS = [
-  "Cria uma atividade de completar a palavra com nomes de frutas",
-  "Quais direitos a Lei Berenice Piana garante?",
-  "Como uma rotina visual pode ajudar em casa?",
+const SUGGESTIONS: { icon: IconName; label: string; text: string }[] = [
+  { icon: "bulb", label: "Direitos da pessoa autista", text: "Quais direitos a Lei Berenice Piana garante?" },
+  { icon: "calendar", label: "Rotina em casa", text: "Como uma rotina visual pode ajudar em casa?" },
+  { icon: "info", label: "Tirar uma dúvida", text: "Tenho uma dúvida sobre autismo, pode me ajudar?" },
 ];
 
-export default function ChatScreen({ chat, drafts, nome }: ChatScreenProps) {
-  const endRef = useRef<HTMLDivElement>(null);
+export default function ChatScreen({ chat, drafts, onCreate }: ChatScreenProps) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const empty = chat.messages.length === 0 && !chat.loading;
+  const last = chat.messages[chat.messages.length - 1];
+  const waiting = chat.loading && (!last || last.role !== "assistant" || !last.content);
+  const visible = chat.messages.filter((message) => message.role === "user" || message.content);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [chat.messages.length, chat.loading]);
+    const list = listRef.current;
+    if (list) list.scrollTo({ top: list.scrollHeight, behavior: "smooth" });
+  }, [chat.messages.length, chat.loading, last?.content.length]);
+
+  if (empty && chat.opening) {
+    return (
+      <section className="screen">
+        <div className="chat-hero">
+          <p className="muted">Abrindo a conversa...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (empty) {
+    return (
+      <section className="screen">
+        <div className="chat-hero">
+          <div className="hero-stage">
+            <div className="stage-glow" />
+            <div className="hero-ring" />
+            <div className="hero-shadow" />
+            <img className="hero-mascot" src={MASCOT.feliz} alt="Teo" />
+          </div>
+
+          <h1 className="hero-title">
+            Olá, eu sou o <span className="text-gradient">Teo</span>
+          </h1>
+          <p className="hero-sub">
+            Tire dúvidas sobre autismo, peça ideias e crie atividades para o IntegraMente.
+          </p>
+
+          <Composer disabled={chat.loading} onSend={chat.send} />
+
+          <div className="chips">
+            {SUGGESTIONS.map((suggestion) => (
+              <button
+                key={suggestion.label}
+                type="button"
+                className="chip-button"
+                onClick={() => chat.send(suggestion.text)}
+              >
+                <Icon name={suggestion.icon} />
+                {suggestion.label}
+              </button>
+            ))}
+            <button type="button" className="chip-button" onClick={onCreate}>
+              <Icon name="create" />
+              Criar uma atividade
+            </button>
+          </div>
+
+          {chat.error && <p className="error">{chat.error}</p>}
+        </div>
+      </section>
+    );
+  }
 
   return (
-    <section className="chat">
-      <div className="chat-messages">
-        {chat.messages.length === 0 && (
-          <div className="chat-empty">
-            <h2>Oi, {nome.split(" ")[0]}! Eu sou o Teo.</h2>
-            <p>
-              Posso tirar dúvidas sobre autismo e criar atividades de completar a palavra para o
-              IntegraMente. Toda atividade nasce como rascunho e só chega à criança depois que você
-              aprovar.
-            </p>
-            <div className="suggestions">
-              {SUGGESTIONS.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  className="suggestion"
-                  disabled={chat.loading}
-                  onClick={() => chat.send(suggestion)}
-                >
-                  {suggestion}
-                </button>
+    <section className="screen">
+      <header className="chat-header">
+        <div className="chat-id">
+          <img className="avatar" src={MASCOT.feliz} alt="" />
+          <div>
+            <strong>Teo</strong>
+            <span className="online">online</span>
+          </div>
+        </div>
+        <button type="button" className="button-soft" disabled={chat.loading} onClick={chat.restart}>
+          <Icon name="newChat" />
+          Nova conversa
+        </button>
+      </header>
+
+      <div className="chat-list" ref={listRef}>
+        <div className="chat-thread">
+          {visible.map((message) => (
+            <MessageBubble key={message.id} message={message}>
+              {message.drafts.map((draft) => (
+                <DraftCard
+                  key={draft.id}
+                  draft={draft}
+                  state={drafts.stateOf(draft)}
+                  preview={drafts.previews[draft.id]}
+                  busy={drafts.busyId === draft.id}
+                  onPreview={() => drafts.loadPreview(draft.id)}
+                  onApprove={() => drafts.approve(draft.id)}
+                  onRemove={() => drafts.remove(draft.id)}
+                />
               ))}
+            </MessageBubble>
+          ))}
+
+          {waiting && (
+            <div className="typing" role="status">
+              <img src={MASCOT.pensando} alt="" />
+              <div className="typing-bubble">
+                <span className="dots">
+                  <i />
+                  <i />
+                  <i />
+                </span>
+                {chat.status ?? "Teo está pensando"}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {chat.messages.map((message) => (
-          <MessageBubble key={message.id} message={message}>
-            {message.drafts.map((draft) => (
-              <DraftCard
-                key={draft.id}
-                draft={draft}
-                state={drafts.stateOf(draft)}
-                preview={drafts.previews[draft.id]}
-                busy={drafts.busyId === draft.id}
-                onPreview={() => drafts.loadPreview(draft.id)}
-                onApprove={() => drafts.approve(draft.id)}
-                onRemove={() => drafts.remove(draft.id)}
-              />
-            ))}
-          </MessageBubble>
-        ))}
-
-        {chat.loading && (
-          <div className="typing" role="status">
-            <span />
-            <span />
-            <span />
-            O Teo está pensando...
-          </div>
-        )}
-
-        {chat.error && <p className="error">{chat.error}</p>}
-        {drafts.error && <p className="error">{drafts.error}</p>}
-
-        <div ref={endRef} />
+          {chat.error && <p className="error">{chat.error}</p>}
+          {drafts.error && <p className="error">{drafts.error}</p>}
+        </div>
       </div>
 
-      <Composer disabled={chat.loading} onSend={chat.send} />
+      <div className="chat-footer">
+        <Composer disabled={chat.loading} onSend={chat.send} />
+      </div>
     </section>
   );
 }

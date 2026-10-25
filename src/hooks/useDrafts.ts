@@ -64,8 +64,8 @@ export default function useDrafts(session: TeoSession | null, onExpired: () => v
     }
   };
 
-  const approve = async (id: number) => {
-    if (!session) return;
+  const approve = async (id: number): Promise<boolean> => {
+    if (!session) return false;
 
     setBusyId(id);
     setError(null);
@@ -76,15 +76,17 @@ export default function useDrafts(session: TeoSession | null, onExpired: () => v
       setDrafts((current) =>
         current.map((draft) => (draft.id === id ? { ...draft, draft: false } : draft)),
       );
+      return true;
     } catch (err) {
       handleError(err, "Não foi possível aprovar a atividade");
+      return false;
     } finally {
       setBusyId(null);
     }
   };
 
-  const remove = async (id: number) => {
-    if (!session) return;
+  const remove = async (id: number): Promise<boolean> => {
+    if (!session) return false;
 
     setBusyId(id);
     setError(null);
@@ -93,8 +95,10 @@ export default function useDrafts(session: TeoSession | null, onExpired: () => v
       await removeDraft(session.token, id);
       setStates((current) => ({ ...current, [id]: "removed" }));
       setDrafts((current) => current.filter((draft) => draft.id !== id));
+      return true;
     } catch (err) {
       handleError(err, "Não foi possível remover a atividade");
+      return false;
     } finally {
       setBusyId(null);
     }

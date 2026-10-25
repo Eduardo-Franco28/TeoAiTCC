@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
+import Icon from "./Icon";
 
 interface ComposerProps {
   disabled: boolean;
@@ -8,8 +9,18 @@ interface ComposerProps {
 
 const MAX_LENGTH = 2000;
 
+const MAX_HEIGHT = 160;
+
 export default function Composer({ disabled, onSend }: ComposerProps) {
   const [text, setText] = useState<string>("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    input.style.height = "auto";
+    input.style.height = `${Math.min(input.scrollHeight, MAX_HEIGHT)}px`;
+  }, [text]);
 
   const submit = (event?: FormEvent) => {
     event?.preventDefault();
@@ -33,15 +44,16 @@ export default function Composer({ disabled, onSend }: ComposerProps) {
       </label>
       <textarea
         id="composer-input"
+        ref={inputRef}
         value={text}
         maxLength={MAX_LENGTH}
         rows={1}
-        placeholder="Pergunte algo ou peça uma atividade..."
+        placeholder="Fale com o Teo…"
         onChange={(event) => setText(event.target.value)}
         onKeyDown={handleKeyDown}
       />
-      <button type="submit" className="button-send" disabled={disabled || !text.trim()} aria-label="Enviar">
-        ➤
+      <button type="submit" className="send-button" disabled={disabled || !text.trim()} aria-label="Enviar">
+        <Icon name="send" />
       </button>
     </form>
   );
