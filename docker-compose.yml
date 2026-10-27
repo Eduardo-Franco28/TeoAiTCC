@@ -1,0 +1,11 @@
+services:
+  teo-web:
+    build:
+      context: .
+      args:
+        VITE_INTEGRAMENTE_API_URL: ${VITE_INTEGRAMENTE_API_URL:?Informe VITE_INTEGRAMENTE_API_URL no .env}
+        VITE_TEO_API_URL: ${VITE_TEO_API_URL:?Informe VITE_TEO_API_URL no .env}
+    image: teo-web
+    restart: unless-stopped
+    ports:
+      - "${TEO_WEB_PORT:-8090}:80"

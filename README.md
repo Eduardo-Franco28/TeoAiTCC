@@ -29,6 +29,24 @@ O acesso é sempre pelo app IntegraMente: o adulto toca em **Teo** no perfil, di
 
 3. Os dois backends precisam liberar a origem do site no CORS (`TEO_WEB_ORIGINS`).
 
+## Rodando com Docker
+
+A imagem compila o site e serve com nginx. Os endereços dos backends entram **na hora do build**; o compose lê os dois do `.env`:
+
+```bash
+docker compose up -d --build
+```
+
+O site fica em `http://localhost:8090` (mude com `TEO_WEB_PORT`). Sem `VITE_INTEGRAMENTE_API_URL` ou `VITE_TEO_API_URL`, o build para com aviso. Trocou um endereço? Rode o build de novo.
+
+Sem compose:
+
+```bash
+docker build -t teo-web --build-arg VITE_INTEGRAMENTE_API_URL=https://api.exemplo.com --build-arg VITE_TEO_API_URL=https://teo.exemplo.com .
+```
+
+Lembre de colocar o endereço onde o site vai ficar em `TEO_WEB_ORIGINS` no Spring e no teo-ai.
+
 ## Telas
 
 | Tela | O que faz |
